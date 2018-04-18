@@ -3,12 +3,14 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
 #include <ctype.h>
 #include <getopt.h>
 #include <time.h>
+#include <errno.h>
 
 
 //
@@ -107,9 +109,45 @@ int main(int argc, char *argv[])
         port = argv[optind];
     }
     
-    if (verbose) {
+    
+    if (verbose == 1) {
         printf("Using port [%s]\n", port); fflush(stdout);
     }
+    
+    // Parse the port string to a long
+    char* end;
+    long proxy_port = strtol(port, &end, 10);
 
+    // Make a socket for the proxy to act
+    // param 1 specifies IPV4 will be used 
+    // param 2 specifies that it will be TCP traffic
+    // param 3 sets the protocol to be the default protocol of IPV4 (TCP)
+    int proxy_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (proxy_socket == -1) {
+        fprintf(stderr, "%s\n", strerror(errno));
+        return -1;
+    }
+
+    // Construct a
+    
+    struct sockaddr_in proxy_addr;
+    proxy_addr.sin_family = AF_INET;
+    proxy_addr.sin_port = htons(proxy_port);
+    proxy_addr.sin_addr.s_addr = INADDR_ANY;
+    
+
+
+    bind(proxy_socket, (struct sockaddr*) &proxy_addr, sizeof(proxy_addr));
+    listen(proxy_socket, 5);
+
+    int client_socket;
+    while (1) {
+        client_socket = accept(proxy_socket, NULL, NULL);
+        printf("Client connected...\n");
+        send(client_socket, "HELLO", sizeof("HELLO"), 0);
+        close(client_socket);
+    }
+    close(proxy_socket); 
+    return 0;
 }
-
