@@ -125,8 +125,17 @@ int main(int argc, char *argv[])
     int proxy_socket = socket(AF_INET, SOCK_STREAM, 0);
 
     if (proxy_socket == -1) {
-        fprintf(stderr, "%s\n", strerror(errno));
+        fprintf(stderr, "socket() failed: %s\n", strerror(errno));
         return -1;
+    }
+    
+    int optval = 1; 
+    int proxy_opt = setsockopt(proxy_socket, SOL_SOCKET, SO_REUSEADDR,
+                               &optval, sizeof optval);
+    if (proxy_opt == -1) {
+        fprintf(stderr, "setsockopt() failed: %s\n", strerror(errno));
+        return -1;
+
     }
 
     // Construct a
