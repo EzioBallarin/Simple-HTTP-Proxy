@@ -3,12 +3,14 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
 #include <ctype.h>
 #include <getopt.h>
 #include <time.h>
+#include <errno.h>
 
 
 //
@@ -107,9 +109,147 @@ int main(int argc, char *argv[])
         port = argv[optind];
     }
     
-    if (verbose) {
+    
+    if (verbose == 1) {
         printf("Using port [%s]\n", port); fflush(stdout);
     }
+    
+    // Parse the port string to a long
+    char* end;
+    long proxy_port = strtol(port, &end, 10);
 
+    // Make a socket for the proxy to act
+    // param 1 specifies IPV4 will be used 
+    // param 2 specifies that it will be TCP traffic
+    // param 3 sets the protocol to be the default protocol of IPV4 (TCP)
+    int proxy_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (proxy_socket == -1) {
+        fprintf(stderr, "socket() failed: %s\n", strerror(errno));
+        return -1;
+    }
+    
+    int optval = 1; 
+    int proxy_opt = setsockopt(proxy_socket, SOL_SOCKET, SO_REUSEADDR,
+                               &optval, sizeof optval);
+    if (proxy_opt == -1) {
+        fprintf(stderr, "setsockopt() failed: %s\n", strerror(errno));
+        return -1;
+
+    }
+
+    // Construct an IPV4 sockaddr that binds to all interfaces
+    // (since we specify s_addr = INADDR_ANY) on the given port 
+    // by the user
+    struct sockaddr_in proxy_addr;
+    proxy_addr.sin_family = AF_INET;
+    proxy_addr.sin_port = htons(proxy_port);
+    proxy_addr.sin_addr.s_addr = INADDR_ANY;
+
+
+    // Bind the socket to the user's given port on all IP addresses 
+    // the machine running the proxy has
+    int proxy_bind = bind( 
+        proxy_socket, 
+        (struct sockaddr*) &proxy_addr, 
+        sizeof(proxy_addr)
+    );
+    if (proxy_bind == -1) {
+        fprintf(stderr, "bind() failed: %s\n", strerror(errno));
+        return -1;
+    }   
+
+    // Set the socket to listen on the user's given port
+    int proxy_listen = listen(proxy_socket, LISTEN_QUEUE);
+    if (proxy_listen == -1) {
+        fprintf(stderr, "listen() failed: %s\n", strerror(errno));
+    }
+
+    // Handle incoming connections in the listen() queue on the proxy socket
+    int client_socket;
+    while (1) {
+
+        // Setup sockaddr to store connecting client's address
+        struct sockaddr_in client_addr;
+        socklen_t client_addr_size = sizeof(client_addr);
+
+        // Accept the connection; put the client's address info
+        // in the sockaddr_in struct setup above
+        client_socket = accept(
+            proxy_socket, 
+            (struct sockaddr*) &client_addr, 
+            &client_addr_size
+        );
+        if (client_socket == -1) {
+            fprintf(stderr, "accept() failed: %s\n", strerror(errno));
+            return -1;
+        }
+
+        /********************* TEST CODE ********************** */
+        // Setup a string for the IP address to go
+        char client_ip_address[INET_ADDRSTRLEN];
+        // Convert the client's sockaddr to an IPV4 readable string
+        // and put it into the client_ip_address string defined above
+        if (inet_ntop(
+                AF_INET, 
+                &(client_addr.sin_addr), 
+                client_ip_address, 
+                INET_ADDRSTRLEN
+            ) == NULL) {
+            fprintf(stderr, "inet_ntop() failed: %s\n", strerror(errno));
+            return -1;
+        }
+        printf("Client %s connected...\n", client_ip_address); 
+        /********************* TEST CODE ********************** */
+
+
+        /* Entering the real meat of the netcode */
+        // Setup a receiving buffer to carry the message sent from the client
+        char client_request[MESSAGE_BUFFER_LEN];
+
+        // Receive the data from the client socket, 
+        // place it in the request buffer
+        int client_recv = recv(
+            client_socket, 
+            &client_request, 
+            MESSAGE_BUFFER_LEN, 
+            0
+        );
+        if (client_recv == -1) {
+            fprintf(stderr, "recv() failed: %s\n", strerror(errno));
+            return -1;
+        }
+
+        // Print out the client's request
+        printf("%s\n", client_request); 
+        
+        // Setup an HTML response
+        char html_resp[1024] = "HTTP/1.1 200 OKi \r\n\n <html>wow</html>";
+        
+        // Send the HTML response to the client socket
+        int client_send =  send(
+            client_socket, 
+            html_resp, 
+            sizeof(html_resp), 
+            0
+        );
+        if (client_send == -1) {
+            fprintf(stderr, "send() failed: %s\n", strerror(errno));
+            return -1;
+        }
+
+        // Close the connection between the proxy socket and client socket
+        int client_close = close(client_socket);
+        if (client_close == -1) {
+            fprintf(stderr, "close() failed: %s\n", strerror(errno));
+            return -1;
+        }
+    }
+    // Close the proxy down.
+    int proxy_close = close(proxy_socket); 
+    if (proxy_close == -1) {
+        fprintf(stderr, "close() failed: %s\n", strerror(errno));
+        return -1;
+    }
+    return 0;
 }
-
