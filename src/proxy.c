@@ -169,6 +169,11 @@ int main(int argc, char *argv[])
     int client_socket;
     while (1) {
 
+        //TODO:
+        /* Add child forks
+         * parse HTTP requests for their headers
+         */
+
         // Setup sockaddr to store connecting client's address
         struct sockaddr_in client_addr;
         socklen_t client_addr_size = sizeof(client_addr);
