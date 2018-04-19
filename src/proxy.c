@@ -76,7 +76,8 @@ void exit_msg(int cond, const char* msg)
     return;
 }
 
-
+// Taken from client-server-ex
+void handle_connection(int fd);
 
 //
 // Main
@@ -167,13 +168,41 @@ int main(int argc, char *argv[])
 
     // Handle incoming connections in the listen() queue on the proxy socket
     int client_socket;
-    while (1) {
-
+    struct timeval tv;
+    int timeout = 0, rval, conn_pid;
+    fd_set proxy_and_conns;
+    while (timeout < 500) {
+        
         //TODO:
         /* Add child forks
          * parse HTTP requests for their headers
          */
+        
+        // Wait for a connection to be ready 
+        // (taken from client-server-ex)
+        FD_ZERO(&proxy_and_conns);
+        FD_SET(proxy_socket, &proxy_and_conns);
+        tv.tv_sec = 20;
+        tv.tv_usec = 0;
 
+        // Grab the 
+        rval = select(proxy_socket+1, &proxy_and_conns, NULL, NULL, &tv);
+        
+        if (rval == -1) {
+            fprintf(stderr, "select() failed: %s\n", strerror(errno));
+            return -1;
+        }
+        
+        // Reap zombie children
+        waitpid(-1, NULL, WNOHANG);
+
+        // If no FD was select()ed from the set, skip the rest of the loop
+        // and increment the timeout
+        if (rval == 0) {
+            timeout++;
+            continue;
+        }
+        
         // Setup sockaddr to store connecting client's address
         struct sockaddr_in client_addr;
         socklen_t client_addr_size = sizeof(client_addr);
@@ -206,42 +235,19 @@ int main(int argc, char *argv[])
         }
         printf("Client %s connected...\n", client_ip_address); 
         /********************* TEST CODE ********************** */
+        
 
-
-        /* Entering the real meat of the netcode */
-        // Setup a receiving buffer to carry the message sent from the client
-        char client_request[MESSAGE_BUFFER_LEN];
-
-        // Receive the data from the client socket, 
-        // place it in the request buffer
-        int client_recv = recv(
-            client_socket, 
-            &client_request, 
-            MESSAGE_BUFFER_LEN, 
-            0
-        );
-        if (client_recv == -1) {
-            fprintf(stderr, "recv() failed: %s\n", strerror(errno));
-            return -1;
+        // Open child process to handle connection
+        // Taken from client-server-ex
+        if ((conn_pid = fork()) == 0) {
+            close(proxy_socket);
+            printf("Handling connection %d: \n", getpid());
+            handle_connection(client_socket);
+            printf("%d done.", getpid());
+            exit(0);
         }
 
-        // Print out the client's request
-        printf("%s\n", client_request); 
-        
-        // Setup an HTML response
-        char html_resp[1024] = "HTTP/1.1 200 OKi \r\n\n <html>wow</html>";
-        
-        // Send the HTML response to the client socket
-        int client_send =  send(
-            client_socket, 
-            html_resp, 
-            sizeof(html_resp), 
-            0
-        );
-        if (client_send == -1) {
-            fprintf(stderr, "send() failed: %s\n", strerror(errno));
-            return -1;
-        }
+
 
         // Close the connection between the proxy socket and client socket
         int client_close = close(client_socket);
@@ -249,6 +255,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "close() failed: %s\n", strerror(errno));
             return -1;
         }
+
     }
     // Close the proxy down.
     int proxy_close = close(proxy_socket); 
@@ -256,5 +263,54 @@ int main(int argc, char *argv[])
         fprintf(stderr, "close() failed: %s\n", strerror(errno));
         return -1;
     }
+    printf("Server exiting\n");
     return 0;
+}
+
+// Taken from client-server-ex
+void handle_connection(int client_socket) {
+
+    /* Entering the real meat of the netcode */
+    // Setup a receiving buffer to carry the message sent from the client
+    char client_request[MESSAGE_BUFFER_LEN];
+
+    
+    // Receive the data from the client socket, 
+    // place it in the request buffer
+    /*
+    int client_recv = recv(
+        client_socket, 
+        &client_request, 
+        MESSAGE_BUFFER_LEN, 
+        0
+    );
+    if (client_recv == -1) {
+        fprintf(stderr, "recv() failed: %s\n", strerror(errno));
+        return -1;
+    }
+    */
+    read(client_socket, &client_request, MESSAGE_BUFFER_LEN);
+    // Print out the client's request
+    printf("%s\n", client_request); 
+    
+    // Setup an HTML response
+    char html_resp[1024] = "HTTP/1.1 200 OKi \r\n\n <html>wow</html>";
+    
+    write(client_socket, &html_resp, 1024);
+    // Send the HTML response to the client socket
+    /*
+    int client_send =  send(
+        client_socket, 
+        html_resp, 
+        sizeof(html_resp), 
+        0
+    );
+    if (client_send == -1) {
+        fprintf(stderr, "send() failed: %s\n", strerror(errno));
+        return -1;
+    }
+    */
+
+    return;
+
 }
