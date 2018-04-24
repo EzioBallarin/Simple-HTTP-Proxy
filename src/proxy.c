@@ -129,6 +129,8 @@ int main(int argc, char *argv[])
         fprintf(stderr, "socket() failed: %s\n", strerror(errno));
         return -1;
     }
+
+    printf("%d\n", proxy_socket);
     
     int optval = 1; 
     int proxy_opt = setsockopt(proxy_socket, SOL_SOCKET, SO_REUSEADDR,
@@ -185,7 +187,7 @@ int main(int argc, char *argv[])
         tv.tv_sec = 20;
         tv.tv_usec = 0;
 
-        // Grab the 
+        // Grab the  
         rval = select(proxy_socket+1, &proxy_and_conns, NULL, NULL, &tv);
         
         if (rval == -1) {
@@ -233,9 +235,13 @@ int main(int argc, char *argv[])
             fprintf(stderr, "inet_ntop() failed: %s\n", strerror(errno));
             return -1;
         }
+
+        printf("Client %d connected...\n", client_addr.sin_addr); 
         printf("Client %s connected...\n", client_ip_address); 
         /********************* TEST CODE ********************** */
         
+        
+        printf("parent pid: %d\n", getpid());
 
         // Open child process to handle connection
         // Taken from client-server-ex
@@ -275,41 +281,17 @@ void handle_connection(int client_socket) {
     char client_request[MESSAGE_BUFFER_LEN];
 
     
-    // Receive the data from the client socket, 
-    // place it in the request buffer
-    /*
-    int client_recv = recv(
-        client_socket, 
-        &client_request, 
-        MESSAGE_BUFFER_LEN, 
-        0
-    );
-    if (client_recv == -1) {
-        fprintf(stderr, "recv() failed: %s\n", strerror(errno));
-        return -1;
-    }
-    */
+    // Read a request of length MESSAGE_BUFFER_LEN from client
     read(client_socket, &client_request, MESSAGE_BUFFER_LEN);
+    
     // Print out the client's request
     printf("%s\n", client_request); 
     
     // Setup an HTML response
-    char html_resp[1024] = "HTTP/1.1 200 OKi \r\n\n <html>wow</html>";
+    char html_resp[1024] = "HTTP/1.1 200 OK \r\n\n <html>wow</html>";
     
+    // Send the HTML response to the client
     write(client_socket, &html_resp, 1024);
-    // Send the HTML response to the client socket
-    /*
-    int client_send =  send(
-        client_socket, 
-        html_resp, 
-        sizeof(html_resp), 
-        0
-    );
-    if (client_send == -1) {
-        fprintf(stderr, "send() failed: %s\n", strerror(errno));
-        return -1;
-    }
-    */
 
     return;
 

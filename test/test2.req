@@ -1,0 +1,7 @@
+GET http://i.imgur.com/jrTZPm3.jpg HTTP/1.1
+User-Agent: Wget/1.18 (linux-gnu)
+Accept: */*
+Accept-Encoding: identity
+Host: i.imgur.com
+Connection: Keep-Alive
+Proxy-Connection: Keep-Alive
