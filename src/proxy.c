@@ -304,7 +304,7 @@ void handle_connection(int client_socket) {
     struct addrinfo hints, *infoptr;
     // Set the family of addresses to look at to be IPV4
     memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_UNSPEC;     // IPV4 or IPV6
+    hints.ai_family = AF_INET;     // IPV4 records only
     hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
 
     // Param 1 = the host name to look up
@@ -333,25 +333,33 @@ void handle_connection(int client_socket) {
     // as the destination for the write() of the http request 
     // on behalf of the connected client
     struct addrinfo *record;
+    char host[256];
     // Print out the IP address records 
     for (record = infoptr; record != NULL; record = record->ai_next) {
-        socklen_t addr_size = 0;
         
+        socklen_t addr_size = 0;
+        struct sockaddr* client_req_addr;
         if (record->ai_family == AF_INET) {
             addr_size = INET_ADDRSTRLEN;
+            client_req_addr = (struct sockaddr_in*) record->ai_addr;
         } else {
             addr_size = INET6_ADDRSTRLEN;
+            client_req_addr = (struct sockaddr_in6*) record->ai_addr;
         }
 
         char addr_string[addr_size];
 
         if (inet_ntop(
-                record->ai_family, record->ai_addr, addr_string, addr_size
+                record->ai_family, client_req_addr, addr_string, addr_size
             ) == NULL ) {
             fprintf(stderr, "inet_ntop: %s\n", strerror(errno));
             continue;
         }
-        printf("Checking %s...\n", addr_string);
+        getnameinfo(
+            record->ai_addr, record->ai_addrlen, host, sizeof(host), 
+            NULL, 0, NI_NUMERICHOST
+        );
+        printf("Checking %s\t%s...\n", addr_string,host);
         int req_socket = socket(
             record->ai_family, record->ai_socktype, record->ai_protocol
         );
@@ -363,16 +371,58 @@ void handle_connection(int client_socket) {
         printf("Socket created for request to google...\n");
 
         int client_req_conn = connect(
-            req_socket, record->ai_addr, record->ai_addrlen
+            req_socket, client_req_addr, record->ai_addrlen
         );
         if (client_req_conn == -1) {
             fprintf(stderr, "client_req_conn: %s\n", strerror(errno));
             continue;
         }
 
+        printf("Successfully connected to google...\n");
+       
+        int client_req_write = write(
+            req_socket, client_request, sizeof(client_request)
+        );
+        if (client_req_write == -1) {
+            fprintf(stderr, "client_req_write: %s\n", strerror(errno));
+            continue;
+        }
+
+        printf("Request sent...\n");
+        
+        char remote_response[100000];
+        int client_req_read = 0;
+        int client_req_resp = 0;
+        printf("Receiving response...\n");
+        // Keep reading in 8K chunks until whole response has been sent back
+        // to client
+        while ((client_req_read = read(
+                req_socket, &remote_response, sizeof(remote_response))) > 0) {
+
+            // Send the HTML response to the client
+            client_req_resp = write(
+                client_socket, &remote_response, sizeof(remote_response)
+            );
+            if (client_req_resp == -1) {
+                fprintf(
+                    stderr, "client_req_resp: write(): %s\n", strerror(errno)
+                );
+                exit(1);
+                break;
+            }
+
+
+        }
+        if (client_req_read == -1) {
+            fprintf(stderr, "client_req_read: %s\n", strerror(errno));
+            continue;
+        }
+        printf("Response transmitted to client...\n\n");
+        
 
     }
-    if (record == NULL) {
+
+    if (record->ai_next == NULL) {
         fprintf(stderr, "failed to connect to %s\n", client_request_url);
         exit(1);
     }
@@ -380,15 +430,6 @@ void handle_connection(int client_socket) {
     // Free up any memory allocated for the linked list of results
     freeaddrinfo(infoptr);
     
-    // Print out the client's request
-    printf("%s\n", client_request); 
-    
-    // Setup an HTML response
-    char html_resp[1024] = "HTTP/1.1 200 OK \r\n\n <html>wow</html>";
-    
-    // Send the HTML response to the client
-    write(client_socket, &html_resp, 1024);
-
     return;
 
 }
