@@ -11,34 +11,13 @@
 #include <getopt.h>
 #include <time.h>
 #include <errno.h>
-
+#include "http_support.h"
 
 //
 // Globals and constants
 //
-static int verbose = 1;
 #define CRLF                "\r\n"
-#define LISTEN_QUEUE        10
-#define CLIENT_TIMEOUT      5
 #define MESSAGE_BUFFER_LEN  2048
-
-// Status codes from RFC 1945 (Section 6.1.1)
-#define OK              200
-#define CREATED         201
-#define ACCEPTED        202
-#define NO_CONTENT      204
-#define MOVED_PERM      301
-#define MOVED_TEMP      302
-#define NOT_MODIFIED    304
-#define BAD_REQUEST     400
-#define UNAUTHORIZED    401
-#define FORBIDDEN       403
-#define NOT_FOUND       404
-#define INTERNAL_ERROR  500
-#define NOT_IMPLEMENTED 501
-#define BAD_GATEWAY     502
-#define UNAVAILABLE     503
-
 
 const struct option long_opts[] = {
     {"help", no_argument, 0, 'h'},
@@ -63,28 +42,16 @@ void usage(const char* arg)
     exit(0);
 }
 
-
-//
-// A simple function to print error and exit, if cond is true
-//
-void exit_msg(int cond, const char* msg)
-{
-    if (cond) {
-        perror(msg);
-        exit(-1);
-    }
-    return;
-}
-
 // Taken from client-server-ex
 void handle_connection(int fd);
+void lab3_send_client_request(int client_socket, char* req);
 
 //
 // Main
 //
 int main(int argc, char *argv[])
 {
-    int i, opt;
+    int i, opt, verbose;
     char *port = NULL;
 
     // parse arguments
@@ -110,7 +77,6 @@ int main(int argc, char *argv[])
         port = argv[optind];
     }
     
-    
     if (verbose == 1) {
         printf("Using port [%s]\n", port); fflush(stdout);
     }
@@ -130,8 +96,6 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    printf("%d\n", proxy_socket);
-    
     int optval = 1; 
     int proxy_opt = setsockopt(proxy_socket, SOL_SOCKET, SO_REUSEADDR,
                                &optval, sizeof optval);
@@ -175,11 +139,6 @@ int main(int argc, char *argv[])
     fd_set proxy_and_conns;
     while (timeout < 500) {
         
-        //TODO:
-        /* Add child forks
-         * parse HTTP requests for their headers
-         */
-        
         // Wait for a connection to be ready 
         // (taken from client-server-ex)
         FD_ZERO(&proxy_and_conns);
@@ -187,7 +146,7 @@ int main(int argc, char *argv[])
         tv.tv_sec = 20;
         tv.tv_usec = 0;
 
-        // Grab the  
+        // Grab the next available connected client socket 
         rval = select(proxy_socket+1, &proxy_and_conns, NULL, NULL, &tv);
         
         if (rval == -1) {
@@ -277,12 +236,14 @@ void handle_connection(int client_socket) {
 
     /* Entering the real meat of the netcode */
     // Setup a receiving buffer to carry the message sent from the client
-    char client_request[MESSAGE_BUFFER_LEN];
-
-    
+    // Struct defined in http_support.h
+    char* client_request = (char *) malloc(MAX_REQUEST_LEN + 1);
+    client_request[MAX_REQUEST_LEN] = '\0';
     // Read a request of length MESSAGE_BUFFER_LEN from client
-    read(client_socket, &client_request, MESSAGE_BUFFER_LEN);
-   
+    read(client_socket, client_request, MAX_REQUEST_LEN);
+    
+    lab3_send_client_request(client_socket, client_request);
+
     // Overwrite the client request string with a blank string
     strcpy(client_request, "");
     
@@ -390,15 +351,16 @@ void handle_connection(int client_socket) {
 
         printf("Request sent...\n");
         
-        char remote_response[100000];
+        char remote_response[1024];
         int client_req_read = 0;
         int client_req_resp = 0;
         printf("Receiving response...\n");
-        // Keep reading in 8K chunks until whole response has been sent back
+        // Keep reading in chunks until whole response has been sent back
         // to client
         while ((client_req_read = read(
                 req_socket, &remote_response, sizeof(remote_response))) > 0) {
 
+            printf("sending chunk...\n");
             // Send the HTML response to the client
             client_req_resp = write(
                 client_socket, &remote_response, sizeof(remote_response)
@@ -418,11 +380,11 @@ void handle_connection(int client_socket) {
             continue;
         }
         printf("Response transmitted to client...\n\n");
-        
+        break; 
 
     }
 
-    if (record->ai_next == NULL) {
+    if (record == NULL) {
         fprintf(stderr, "failed to connect to %s\n", client_request_url);
         exit(1);
     }
@@ -430,6 +392,8 @@ void handle_connection(int client_socket) {
     // Free up any memory allocated for the linked list of results
     freeaddrinfo(infoptr);
     
+    free(client_request);
+
     return;
 
 }
@@ -442,6 +406,10 @@ void handle_connection(int client_socket) {
  * Return: None. 
  * 
  */
-void lab3_send_client_request(int client_socket) {
+void lab3_send_client_request(int client_socket, char* req) {
+    // TODO: parse char* req HTTP request for its header fields 
+    // and recombine to create a proxied request
+    
+    printf("\tIN HELPER:\n%s\n", req);
     return;
 }
