@@ -11,8 +11,9 @@ BINS=proxy
 
 all: $(BINS)
 
-proxy: proxy.o 
-proxy.o: src/proxy.c
+proxy: proxy.o http_support.o 
+proxy.o: src/proxy.c src/http_support.h
+http_support.o: src/http_support.c
 
 $(BINS):
 	$(CC) $^ -o $@
