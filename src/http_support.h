@@ -67,10 +67,8 @@ typedef struct {
 void init_req(http_req *req);
 void free_req(http_req *req);
 void print_req(http_req *req);
-int http_get_request(FILE *stream, http_req *req);
-int http_response(FILE *stream, http_req *req);
-int http_process_request(http_req *req);
-int get_mime_type(char *filename, http_req *req);
+void parse_client_request(int client_socket, char* req, http_req* req_fields);
+void send_client_request(int client_socket, http_req* req_fields);
 void exit_msg(int cond, const char* msg);
 
 
