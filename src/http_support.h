@@ -41,24 +41,12 @@
 #define BAD_GATEWAY     502
 #define UNAVAILABLE     503
 
-// supported methods
-enum req_method { GET, HEAD, UNSUPPORTED };
-
-// request types
-enum req_type   { SIMPLE, FULL };
-
-//
-// State related to a client request 
-//
 typedef struct {
-    int fd;                  // fd of request's connection
-    enum req_type type;      // request type
-    enum req_method method;  // requested method
-    int  status;             // response status
-    char *resource;          // requested resource name
-    int resource_fd;         // fs associated with requested resource
-    char *mime;              // mime type
-    int length;              // content length
+    char* uri;
+    int port;
+    char* other_headers;
+    char* host;
+    char* user_agent;
 } http_req;
 
 //

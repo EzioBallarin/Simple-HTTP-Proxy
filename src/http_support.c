@@ -1,6 +1,7 @@
 // Courtesy of sample-webserver-ex
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
@@ -28,27 +29,17 @@
 // initializes a request to sensible defaults
 //
 void init_req(http_req *req) {
-    req->resource = NULL;
-    req->mime = NULL;
-    req->resource_fd = -1;
-    req->method = UNSUPPORTED;
-    req->status = OK;
-    req->type = SIMPLE;
-    req->length = -1;
+    req->uri = NULL;
+    req->port = 0;
+    req->other_headers = NULL;
+    req->host = NULL;
+    req->user_agent = NULL;
 }
 
 //
 // Free the resources associated with a request
 //
 void free_req(http_req *req) {
-    if (req->resource_fd != -1) {
-        close(req->resource_fd);
-        req->resource_fd = -1;
-    }
-    if (req->resource) {
-        free(req->resource);
-        req->resource = NULL;
-    }
 }
 
 /**
@@ -87,10 +78,59 @@ void exit_msg(int cond, const char* msg) {
  * 
  */
 void parse_client_request(int client_socket, char* req, http_req* req_fields) {
-    // TODO: parse char* req HTTP request for its header fields 
-    // and recombine to create a proxied request
+    printf("\tIN HELPER:\n%s\n",req);
+    if (strncmp(req, "GET ", 4)) {
+        fprintf(stderr, "req was not a GET request\n");
+        exit(-1);
+        return;
+    }
+
+    char* it = req + 4;
+    char* start = it;
+    char* port_start = NULL;
+    char* port_end = NULL;
+
+    // Parse the first line of the request, past the 4th character
+    // since we are only handling GET requests in this proxy
+    // Should be of the form
+    // Request-URI [space] HTTP-Version CRLF
+    while (*it != ' ') {
+        printf("looking at %c\n", *it);
+        if (*it == ':') {
+            it++;
+            port_start = it;
+            while (isdigit(*it)) {
+                printf("\tlooking at %c\n", *it);
+                it++;
+            }
+            port_end = it;
+            continue;
+        }
+        it++;
+    }
+    printf("finished iteratings\n");
     
-    printf("\tIN HELPER:\n%s\n", req);
+    // Since we have iterated to the end of the URI, and we saved
+    // the starting pointer, we know the URI string length, 
+    // so we can copy that portion of the req to the req_fields struct
+    long int uri_length = it - start;
+    req_fields->uri = malloc(uri_length + 1);
+    strncpy(req_fields->uri, start, uri_length);
+    req_fields->uri[uri_length] = '\0';
+    printf("%s\n", req_fields->uri);
+
+    /** URI parsed **/
+    
+    if (port_start) {
+        long int port_length = port_end - port_start;
+        char* port = malloc(port_length + 1);
+        strncpy(port, port_start, port_length);
+        port[port_length] = '\0';
+        req_fields->port = strtol(port, (char**) NULL, 10);
+    }
+    printf("port:%d\n", req_fields->port);
+
+    printf("done with request\n\n");
     return;
 }
 
@@ -217,7 +257,6 @@ void send_client_request(int client_socket, http_req* req_fields) {
         while ((client_req_read = read(
             req_socket, &remote_response, sizeof(remote_response))) > 0) {
 
-            printf("sending chunk...\n");
             client_req_resp = write(
                 client_socket, &remote_response, sizeof(remote_response)
             );
