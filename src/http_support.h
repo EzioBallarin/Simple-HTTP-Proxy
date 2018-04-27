@@ -44,9 +44,9 @@
 typedef struct {
     char* uri;
     int port;
-    char* other_headers;
     char* host;
     char* user_agent;
+    char* other_headers; // Linked list of other headers in request
 } http_req;
 
 //

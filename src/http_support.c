@@ -30,7 +30,7 @@
 //
 void init_req(http_req *req) {
     req->uri = NULL;
-    req->port = 0;
+    req->port = 80;
     req->other_headers = NULL;
     req->host = NULL;
     req->user_agent = NULL;
@@ -40,6 +40,15 @@ void init_req(http_req *req) {
 // Free the resources associated with a request
 //
 void free_req(http_req *req) {
+    if (req->uri)
+        free(req->uri);
+    if (req->host)
+        free(req->host);
+    if (req->user_agent)
+        free(req->user_agent);
+    if (req->other_headers)
+        free(req->other_headers);
+    init_req(req);
 }
 
 /**
@@ -129,6 +138,7 @@ void parse_client_request(int client_socket, char* req, http_req* req_fields) {
         req_fields->port = strtol(port, (char**) NULL, 10);
     }
     printf("port:%d\n", req_fields->port);
+    /** Port parsed **/
 
     printf("done with request\n\n");
     return;

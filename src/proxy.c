@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
             return -1;
         }
 
-        printf("Client %d connected...\n", client_addr.sin_addr); 
+        printf("Client %d connected...\n", client_addr.sin_addr.s_addr); 
         printf("Client %s connected...\n", client_ip_address); 
         /********************* TEST CODE ********************** */
         
