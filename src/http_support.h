@@ -46,8 +46,14 @@ typedef struct {
     int port;
     char* host;
     char* user_agent;
-    char* other_headers; // Linked list of other headers in request
+    struct http_header* other_headers; // Linked list of other headers in request
 } http_req;
+
+typedef struct {
+    char* header;
+    char* value;
+    struct http_header* next;
+} http_header;
 
 //
 // Function prototypes
@@ -55,7 +61,8 @@ typedef struct {
 void init_req(http_req *req);
 void free_req(http_req *req);
 void print_req(http_req *req);
-void parse_client_request(int client_socket, char* req, http_req* req_fields);
+void parse_client_request(char* req, http_req* req_fields);
+void parse_client_request_headers(char* headers, http_req* req_fields);
 void send_client_request(int client_socket, http_req* req_fields);
 void exit_msg(int cond, const char* msg);
 

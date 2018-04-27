@@ -86,16 +86,39 @@ void exit_msg(int cond, const char* msg) {
  * Return: None. 
  * 
  */
-void parse_client_request(int client_socket, char* req, http_req* req_fields) {
+void parse_client_request(char* req, http_req* req_fields) {
     printf("\tIN HELPER:\n%s\n",req);
+
+    // Since we are only handling valid GET requests, we compare only the first
+    // 4 characters of this request with a hardcoded string "GET ". 
+    // 
+    // According to RFC 1945.5.1, the request-line 
+    // "begins with a method token(i.e. GET, POST, etc.), followed by the
+    // Request-URI and the protocol version, and ending with CRLF. 
+    // The elements are separated by SP (space) characters. No CR or LF 
+    // are allowed except in the final CRLF sequence."
+    // https://tools.ietf.org/html/rfc1945#section-5
+    //
+    // Because of this, we run this strict comparison. If it fails,
+    // so does the proxy.
     if (strncmp(req, "GET ", 4)) {
         fprintf(stderr, "req was not a GET request\n");
         exit(-1);
         return;
     }
-
+     
+    // As a byproduct of the condition above, we know that the first 4
+    // characters have to be "GET ", so we scrap them and know that 
+    // the first character now encountered is the start of the request URI.
+    //
+    // Declare a pointer to the 5th char in the GET request.
+    // This will be our iterator through the request.
     char* it = req + 4;
-    char* start = it;
+
+    // Create a copy of the iterator to determine where the URI start is.
+    char* uri_start = it;
+
+    // Initialize 2 pointers for the port number, if it appears in the URI
     char* port_start = NULL;
     char* port_end = NULL;
 
@@ -104,27 +127,33 @@ void parse_client_request(int client_socket, char* req, http_req* req_fields) {
     // Should be of the form
     // Request-URI [space] HTTP-Version CRLF
     while (*it != ' ') {
-        printf("looking at %c\n", *it);
+
+        // If we encountered a colon, that means there's a port number
+        // coming up
         if (*it == ':') {
             it++;
             port_start = it;
-            while (isdigit(*it)) {
-                printf("\tlooking at %c\n", *it);
+
+            // Keep moving the iterator forward while we are still 
+            // encountering digits of the port
+            while (isdigit(*it)) 
                 it++;
-            }
+
             port_end = it;
+           
             continue;
         }
+
         it++;
     }
-    printf("finished iteratings\n");
+    printf("finished parsing request line\n");
     
     // Since we have iterated to the end of the URI, and we saved
     // the starting pointer, we know the URI string length, 
     // so we can copy that portion of the req to the req_fields struct
-    long int uri_length = it - start;
+    long int uri_length = it - uri_start;
     req_fields->uri = malloc(uri_length + 1);
-    strncpy(req_fields->uri, start, uri_length);
+    strncpy(req_fields->uri, uri_start, uri_length);
     req_fields->uri[uri_length] = '\0';
     printf("%s\n", req_fields->uri);
 
@@ -140,8 +169,36 @@ void parse_client_request(int client_socket, char* req, http_req* req_fields) {
     printf("port:%d\n", req_fields->port);
     /** Port parsed **/
 
+    // Move iterator through the rest of the request line
+    while (*it != '\n')
+        it++;
+    
+    // Move iterator to (potential) first request header
+    it++;
+
+    parse_client_request_headers(it, req_fields); 
+
     printf("done with request\n\n");
     return;
+}
+
+/**
+ * Name: parse_client_request_headers
+ * 
+ * Purpose: Parse the remainder of an HTTP request's headers
+ * Parameters: char* headers - the header string
+ *             http_req* req_fields - pointer to where all parsed
+ *                                    headers should be stored
+ * Return: None
+ * 
+ */
+void parse_client_request_headers(char* headers, http_req* req_fields) {
+    char* header_start = headers;
+    char* cur = headers;
+    size_t hsize = sizeof (http_header);
+    
+    /** TODO: parse message headers **/
+
 }
 
 /**
