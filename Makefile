@@ -19,7 +19,7 @@ $(BINS):
 	$(CC) $^ -o $@
 
 %.o:
-	$(CC) $< -c $(CFLAGS) -o $@
+	$(CC) $< -ggdb -c $(CFLAGS) -o $@
 
 clean:
 	rm -f *.o $(BINS)

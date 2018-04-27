@@ -45,10 +45,6 @@ void usage(const char* arg)
 // Taken from client-server-ex
 void handle_connection(int fd);
 
-// Helper functions 
-void parse_client_request(int client_socket, char* req, http_req* req_fields);
-void send_client_request(int client_socket, http_req* req_fields);
-
 //
 // Main
 //
@@ -198,7 +194,7 @@ int main(int argc, char *argv[])
             return -1;
         }
 
-        printf("Client %d connected...\n", client_addr.sin_addr); 
+        printf("Client %d connected...\n", client_addr.sin_addr.s_addr); 
         printf("Client %s connected...\n", client_ip_address); 
         /********************* TEST CODE ********************** */
         
@@ -244,7 +240,7 @@ void handle_connection(int client_socket) {
     
     // Read a request of length MESSAGE_BUFFER_LEN from client
     read(client_socket, &client_request, MESSAGE_BUFFER_LEN);
-    parse_client_request(client_socket, client_request, &client_request_fields);
+    parse_client_request(&client_request, &client_request_fields);
     send_client_request(client_socket, &client_request_fields);
 
     free_req(&client_request_fields);
