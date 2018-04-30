@@ -30,7 +30,7 @@
 //
 void init_req(http_req *req) {
     req->uri = NULL;
-    req->port = 80;
+    req->port = "80";
     req->other_headers = NULL;
     req->host = NULL;
     req->user_agent = NULL;
@@ -87,7 +87,6 @@ void exit_msg(int cond, const char* msg) {
  * 
  */
 void parse_client_request(char* req, http_req* req_fields) {
-    printf("\tIN HELPER:\n%s\n",req);
 
     // Since we are only handling valid GET requests, we compare only the first
     // 4 characters of this request with a hardcoded string "GET ". 
@@ -115,8 +114,14 @@ void parse_client_request(char* req, http_req* req_fields) {
     // This will be our iterator through the request.
     char* it = req + 4;
 
+    // Move iterator past "http://"
+    it += strlen("http://");
+
     // Create a copy of the iterator to determine where the URI start is.
     char* uri_start = it;
+
+    // Initialize a pointer for the end of just the host portion of the URI 
+    char* host_end = NULL;
 
     // Initialize 2 pointers for the port number, if it appears in the URI
     char* port_start = NULL;
@@ -127,10 +132,13 @@ void parse_client_request(char* req, http_req* req_fields) {
     // Should be of the form
     // Request-URI [space] HTTP-Version CRLF
     while (*it != ' ') {
-
+        
         // If we encountered a colon, that means there's a port number
         // coming up
-        if (*it == ':') {
+        // Also check to make sure the next char is a number
+        if (*it == ':' && (isdigit(*(it + 1)))) {
+
+            host_end = it;
             it++;
             port_start = it;
 
@@ -142,11 +150,19 @@ void parse_client_request(char* req, http_req* req_fields) {
             port_end = it;
            
             continue;
+        } else if (*it == '/' && !host_end) {
+            host_end = it;
         }
 
         it++;
     }
     printf("finished parsing request line\n");
+
+    long int host_length = host_end - uri_start;
+    req_fields->host = malloc(host_length + 1);
+    strncpy(req_fields->host, uri_start, host_length);
+    printf("%s\n", req_fields->host);
+    /** HOST parsed **/
     
     // Since we have iterated to the end of the URI, and we saved
     // the starting pointer, we know the URI string length, 
@@ -156,17 +172,15 @@ void parse_client_request(char* req, http_req* req_fields) {
     strncpy(req_fields->uri, uri_start, uri_length);
     req_fields->uri[uri_length] = '\0';
     printf("%s\n", req_fields->uri);
-
     /** URI parsed **/
-    
-    if (port_start) {
+
+    if (port_start != NULL) {
         long int port_length = port_end - port_start;
         char* port = malloc(port_length + 1);
         strncpy(port, port_start, port_length);
         port[port_length] = '\0';
-        req_fields->port = strtol(port, (char**) NULL, 10);
+        req_fields->port = port; 
     }
-    printf("port:%d\n", req_fields->port);
     /** Port parsed **/
 
     // Move iterator through the rest of the request line
@@ -177,8 +191,10 @@ void parse_client_request(char* req, http_req* req_fields) {
     it++;
 
     parse_client_request_headers(it, req_fields); 
+    req_fields->headers = it;
 
     printf("done with request\n\n");
+
     return;
 }
 
@@ -193,11 +209,13 @@ void parse_client_request(char* req, http_req* req_fields) {
  * 
  */
 void parse_client_request_headers(char* headers, http_req* req_fields) {
+    /*
     char* header_start = headers;
     char* cur = headers;
     size_t hsize = sizeof (http_header);
-    
+    */
     /** TODO: parse message headers **/
+    //printf("%p %p %d\n", header_start, cur, hsize);
 
 }
 
@@ -211,16 +229,6 @@ void parse_client_request_headers(char* headers, http_req* req_fields) {
  * 
  */
 void send_client_request(int client_socket, http_req* req_fields) {
-    // Setup the fields of an HTTP request
-    // Our dummy request will go for google's home page.
-    char client_request[2048];
-    char client_request_resource[] = "/";
-    char client_request_url[] = "www.google.com";
-    sprintf(client_request,
-        "GET %s HTTP/1.1\r\nHost: %s\r\nContent-Type: text/plain\r\n\r\n",
-        client_request_resource, client_request_url
-    );
-    printf(client_request);
 
     // Set up an addrinfo struct and an addrinfo linked list
     // The hints addrinfo provides the structure which getaddrinfo()
@@ -234,6 +242,8 @@ void send_client_request(int client_socket, http_req* req_fields) {
     hints.ai_family = AF_INET;     // IPV4 records only
     hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
 
+    printf("\nLooking up %s...\n", req_fields->host);
+
     // Param 1 = the host name to look up
     // Param 2 = a service to look up (left NULL since
     // we don't know the port)
@@ -241,8 +251,8 @@ void send_client_request(int client_socket, http_req* req_fields) {
     // returned records
     // Param 4 = pointer to the head pointer of the linked list of results
     int request_addr_info = getaddrinfo(
-        client_request_url,
-        "http", &hints, &infoptr
+        req_fields->host,
+        req_fields->port, &hints, &infoptr
     );
 
     // Checks if the return value was nonzero
@@ -254,6 +264,7 @@ void send_client_request(int client_socket, http_req* req_fields) {
         );
         exit(0);
     }
+
 
     // The proxy now acts as a client by opening a new socket
     // and using the address extracted from getaddrinfo()
@@ -295,7 +306,7 @@ void send_client_request(int client_socket, http_req* req_fields) {
             continue;
         } 
 
-        printf("Socket created for request to google...\n");
+        printf("Socket created for request to %s...\n", req_fields->host);
 
         int client_req_conn = connect(
             req_socket, client_req_addr, record->ai_addrlen
@@ -305,8 +316,11 @@ void send_client_request(int client_socket, http_req* req_fields) {
             continue;
         }
 
-        printf("Successfully connected to google...\n");
+        printf("Successfully connected to %s...\n", req_fields->host);
 
+        printf("Generating user's request...\n");
+        char* client_request = generate_request(req_fields);
+        printf("Sending user's request...\n");
         int client_req_write = write(
             req_socket, client_request, sizeof(client_request)
         );
@@ -346,12 +360,23 @@ void send_client_request(int client_socket, http_req* req_fields) {
 
     }
     if (record == NULL) {
-        fprintf(stderr, "failed to connect to %s\n", client_request_url);
+        fprintf(stderr, "failed to connect to %s\n", req_fields->host);
         exit(1);
     }
-
-
+   
     // Free up any memory allocated for the linked list of results
     freeaddrinfo(infoptr);
+}
 
+/**
+ * Name: generate_request()
+ * 
+ * Purpose: Generate an HTTP 1.1 GET request from given fields
+ * Parameters: http_req* req_fields - pointer to an http_req struct 
+ *                                    of fields to use
+ * Return: Pointer to the request string
+ * 
+ */
+char* generate_request(http_req* req_fields) {
+   return NULL; 
 }

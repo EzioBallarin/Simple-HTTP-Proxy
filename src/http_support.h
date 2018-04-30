@@ -43,9 +43,10 @@
 
 typedef struct {
     char* uri;
-    int port;
+    char* port;
     char* host;
     char* user_agent;
+    char* headers; 
     struct http_header* other_headers; // Linked list of other headers in request
 } http_req;
 
@@ -65,6 +66,7 @@ void parse_client_request(char* req, http_req* req_fields);
 void parse_client_request_headers(char* headers, http_req* req_fields);
 void send_client_request(int client_socket, http_req* req_fields);
 void exit_msg(int cond, const char* msg);
+char* generate_request(http_req* req_fields);
 
 
 // a helpful debug macro
