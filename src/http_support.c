@@ -24,6 +24,7 @@
 
 #define HTTP_TIME_FORMAT "%a, %d %b %Y %H:%M:%S GMT"
 #define DIRS_TIME_FORMAT "%d-%b-%Y %H:%M:%S"
+#define CRLF "\r\n"
 
 //
 // initializes a request to sensible defaults
@@ -61,7 +62,11 @@ void free_req(http_req *req) {
  * 
  */
 void print_req(http_req* req) {
-
+    printf("host: %s\n", req->host);
+    printf("port: %s\n", req->port);
+    printf("uri: %s\n", req->uri);
+    printf("user_agent: %s\n", req->user_agent);
+    printf("headers: %s\n", req->headers);
 }
 
 //
@@ -322,7 +327,7 @@ void send_client_request(int client_socket, http_req* req_fields) {
         char* client_request = generate_request(req_fields);
         printf("Sending user's request...\n");
         int client_req_write = write(
-            req_socket, client_request, sizeof(client_request)
+            req_socket, client_request, strlen(client_request) + 1
         );
         if (client_req_write == -1) {
             fprintf(stderr, "client_req_write: %s\n", strerror(errno));
@@ -331,7 +336,7 @@ void send_client_request(int client_socket, http_req* req_fields) {
 
         printf("Request sent...\n");
 
-        char remote_response[1024];
+        char remote_response[1];
         int client_req_read = 0;
         int client_req_resp = 0;
         printf("Receiving response...\n");
@@ -378,5 +383,20 @@ void send_client_request(int client_socket, http_req* req_fields) {
  * 
  */
 char* generate_request(http_req* req_fields) {
-   return NULL; 
+
+    print_req(req_fields);
+    int req_line_size = strlen("GET http://") + strlen(req_fields->uri) + 
+                        strlen(" HTTP/1.1\r\n");
+    int headers_size = strlen(req_fields->headers);
+    char* req_string = malloc(req_line_size + headers_size + 1);
+
+    req_string[req_line_size + headers_size] = '\0';
+    
+    strcat(req_string, "GET http://");
+    strcat(req_string, req_fields->uri);
+    strcat(req_string, " HTTP/1.1\r\n");
+    strcat(req_string, req_fields->headers);
+
+
+    return req_string;
 }
