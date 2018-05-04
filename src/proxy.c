@@ -91,7 +91,9 @@ int main(int argc, char *argv[])
     int proxy_socket = socket(AF_INET, SOCK_STREAM, 0);
 
     if (proxy_socket == -1) {
-        fprintf(stderr, "socket() failed: %s\n", strerror(errno));
+        if(verbose == 1) {
+            fprintf(stderr, "socket() failed: %s\n", strerror(errno));
+        }
         return -1;
     }
 
@@ -99,7 +101,9 @@ int main(int argc, char *argv[])
     int proxy_opt = setsockopt(proxy_socket, SOL_SOCKET, SO_REUSEADDR,
                                &optval, sizeof optval);
     if (proxy_opt == -1) {
+        if(verbose == 1) {
         fprintf(stderr, "setsockopt() failed: %s\n", strerror(errno));
+        }
         return -1;
 
     }
@@ -121,13 +125,15 @@ int main(int argc, char *argv[])
         sizeof(proxy_addr)
     );
     if (proxy_bind == -1) {
-        fprintf(stderr, "bind() failed: %s\n", strerror(errno));
+        if(verbose == 1) {
+            fprintf(stderr, "bind() failed: %s\n", strerror(errno));
+        }
         return -1;
     }   
 
     // Set the socket to listen on the user's given port
     int proxy_listen = listen(proxy_socket, LISTEN_QUEUE);
-    if (proxy_listen == -1) {
+    if (proxy_listen == -1 && verbose == 1) {
         fprintf(stderr, "listen() failed: %s\n", strerror(errno));
     }
 
@@ -149,7 +155,9 @@ int main(int argc, char *argv[])
         rval = select(proxy_socket+1, &proxy_and_conns, NULL, NULL, &tv);
         
         if (rval == -1) {
-            fprintf(stderr, "select() failed: %s\n", strerror(errno));
+            if(verbose == 1) {
+                fprintf(stderr, "select() failed: %s\n", strerror(errno));
+            }
             return -1;
         }
         
@@ -175,7 +183,9 @@ int main(int argc, char *argv[])
             &client_addr_size
         );
         if (client_socket == -1) {
-            fprintf(stderr, "accept() failed: %s\n", strerror(errno));
+            if(verbose == 1) {
+                fprintf(stderr, "accept() failed: %s\n", strerror(errno));
+            }
             return -1;
         }
 
@@ -190,24 +200,33 @@ int main(int argc, char *argv[])
                 client_ip_address, 
                 INET_ADDRSTRLEN
             ) == NULL) {
-            fprintf(stderr, "inet_ntop() failed: %s\n", strerror(errno));
+            if(verbose == 1) {
+                fprintf(stderr, "inet_ntop() failed: %s\n", strerror(errno));
+            }
             return -1;
         }
 
-        printf("Client %d connected...\n", client_addr.sin_addr.s_addr); 
-        printf("Client %s connected...\n", client_ip_address); 
+        if(verbose == 1) {
+            printf("Client %d connected...\n", client_addr.sin_addr.s_addr); 
+            printf("Client %s connected...\n", client_ip_address); 
+            printf("parent pid: %d\n", getpid());
+        }
         /********************* TEST CODE ********************** */
         
         
-        printf("parent pid: %d\n", getpid());
 
         // Open child process to handle connection
         // Taken from client-server-ex
         if ((conn_pid = fork()) == 0) {
             close(proxy_socket);
-            printf("Handling connection %d: \n", getpid());
+            if(verbose == 1) {
+                printf("Handling connection %d: \n", getpid());
+
+            }
             handle_connection(client_socket);
-            printf("%d done.", getpid());
+            if(verbose == 1) {
+                printf("%d done.", getpid());
+            }
             exit(0);
         }
 
@@ -215,7 +234,9 @@ int main(int argc, char *argv[])
         // Close the connection between the proxy socket and client socket
         int client_close = close(client_socket);
         if (client_close == -1) {
-            fprintf(stderr, "close() failed: %s\n", strerror(errno));
+            if(verbose == 1) {
+                fprintf(stderr, "close() failed: %s\n", strerror(errno));
+            }
             return -1;
         }
 
@@ -223,7 +244,9 @@ int main(int argc, char *argv[])
     // Close the proxy down.
     int proxy_close = close(proxy_socket); 
     if (proxy_close == -1) {
-        fprintf(stderr, "close() failed: %s\n", strerror(errno));
+        if(verbose == 1) {
+            fprintf(stderr, "close() failed: %s\n", strerror(errno));
+        }
         return -1;
     }
     printf("Server exiting\n");
