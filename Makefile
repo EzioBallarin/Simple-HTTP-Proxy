@@ -7,7 +7,7 @@ CFLAGS=-g -Wall
 LDFLAGS=
 BINS=proxy
 
-.PHONY: all clean
+.PHONY: all clean clean_tests
 
 all: $(BINS)
 
@@ -22,5 +22,7 @@ $(BINS):
 	$(CC) $< -ggdb -c $(CFLAGS) -o $@
 
 clean:
-	rm -f *.o $(BINS)
+	rm -rf *.o $(BINS) test/proxy_return/*
 
+clean_tests:
+	rm -rf test/proxy_return/*
