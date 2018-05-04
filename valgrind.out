@@ -1,0 +1,168 @@
+==21957== Memcheck, a memory error detector
+==21957== Copyright (C) 2002-2013, and GNU GPL'd, by Julian Seward et al.
+==21957== Using Valgrind-3.10.1 and LibVEX; rerun with -h for copyright info
+==21957== Command: ./proxy 14441 -v
+==21957== Parent PID: 4311
+==21957== 
+==21960== Conditional jump or move depends on uninitialised value(s)
+==21960==    at 0x4E82E64: vfprintf (vfprintf.c:1642)
+==21960==    by 0x4E88F98: printf (printf.c:33)
+==21960==    by 0x401C29: send_client_request (http_support.c:222)
+==21960==    by 0x4017D7: handle_connection (proxy.c:255)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960== 
+==21960== Conditional jump or move depends on uninitialised value(s)
+==21960==    at 0x4C2B6E5: __GI_strchr (in /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
+==21960==    by 0x4F1C5F1: gaih_inet (getaddrinfo.c:467)
+==21960==    by 0x4F20505: getaddrinfo (getaddrinfo.c:2417)
+==21960==    by 0x401C55: send_client_request (http_support.c:231)
+==21960==    by 0x4017D7: handle_connection (proxy.c:255)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960== 
+==21960== Conditional jump or move depends on uninitialised value(s)
+==21960==    at 0x4C2B6DA: __GI_strchr (in /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
+==21960==    by 0x4F1C5F1: gaih_inet (getaddrinfo.c:467)
+==21960==    by 0x4F20505: getaddrinfo (getaddrinfo.c:2417)
+==21960==    by 0x401C55: send_client_request (http_support.c:231)
+==21960==    by 0x4017D7: handle_connection (proxy.c:255)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960== 
+==21960== Conditional jump or move depends on uninitialised value(s)
+==21960==    at 0x4C2BC38: strlen (in /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
+==21960==    by 0x4F6DD9C: __nscd_gethostbyname2_r (nscd_gethst_r.c:61)
+==21960==    by 0x4F4AA0A: gethostbyname2_r@@GLIBC_2.2.5 (getXXbyYY_r.c:196)
+==21960==    by 0x4F1DAE4: gaih_inet (getaddrinfo.c:586)
+==21960==    by 0x4F20505: getaddrinfo (getaddrinfo.c:2417)
+==21960==    by 0x401C55: send_client_request (http_support.c:231)
+==21960==    by 0x4017D7: handle_connection (proxy.c:255)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960== 
+==21960== Conditional jump or move depends on uninitialised value(s)
+==21960==    at 0x5A13655: __libc_res_nsearch (res_query.c:356)
+==21960==    by 0x5805845: _nss_dns_gethostbyname3_r (dns-host.c:192)
+==21960==    by 0x5805AB0: _nss_dns_gethostbyname2_r (dns-host.c:257)
+==21960==    by 0x4F4A979: gethostbyname2_r@@GLIBC_2.2.5 (getXXbyYY_r.c:266)
+==21960==    by 0x4F1DAE4: gaih_inet (getaddrinfo.c:586)
+==21960==    by 0x4F20505: getaddrinfo (getaddrinfo.c:2417)
+==21960==    by 0x401C55: send_client_request (http_support.c:231)
+==21960==    by 0x4017D7: handle_connection (proxy.c:255)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960== 
+==21960== Conditional jump or move depends on uninitialised value(s)
+==21960==    at 0x4C2BC38: strlen (in /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
+==21960==    by 0x5A13847: __libc_res_nquerydomain (res_query.c:577)
+==21960==    by 0x5A13847: __libc_res_nsearch (res_query.c:381)
+==21960==    by 0x5805845: _nss_dns_gethostbyname3_r (dns-host.c:192)
+==21960==    by 0x5805AB0: _nss_dns_gethostbyname2_r (dns-host.c:257)
+==21960==    by 0x4F4A979: gethostbyname2_r@@GLIBC_2.2.5 (getXXbyYY_r.c:266)
+==21960==    by 0x4F1DAE4: gaih_inet (getaddrinfo.c:586)
+==21960==    by 0x4F20505: getaddrinfo (getaddrinfo.c:2417)
+==21960==    by 0x401C55: send_client_request (http_support.c:231)
+==21960==    by 0x4017D7: handle_connection (proxy.c:255)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960== 
+==21960== Conditional jump or move depends on uninitialised value(s)
+==21960==    at 0x5A17CB4: ns_name_pton (ns_name.c:207)
+==21960==    by 0x5A18C5A: ns_name_compress (ns_name.c:612)
+==21960==    by 0x5A129DB: __res_nmkquery (res_mkquery.c:165)
+==21960==    by 0x5A12CEB: __libc_res_nquery (res_query.c:184)
+==21960==    by 0x5A13887: __libc_res_nquerydomain (res_query.c:597)
+==21960==    by 0x5A13887: __libc_res_nsearch (res_query.c:381)
+==21960==    by 0x5805845: _nss_dns_gethostbyname3_r (dns-host.c:192)
+==21960==    by 0x5805AB0: _nss_dns_gethostbyname2_r (dns-host.c:257)
+==21960==    by 0x4F4A979: gethostbyname2_r@@GLIBC_2.2.5 (getXXbyYY_r.c:266)
+==21960==    by 0x4F1DAE4: gaih_inet (getaddrinfo.c:586)
+==21960==    by 0x4F20505: getaddrinfo (getaddrinfo.c:2417)
+==21960==    by 0x401C55: send_client_request (http_support.c:231)
+==21960==    by 0x4017D7: handle_connection (proxy.c:255)
+==21960== 
+==21960== Conditional jump or move depends on uninitialised value(s)
+==21960==    at 0x4E82E64: vfprintf (vfprintf.c:1642)
+==21960==    by 0x4E88F98: printf (printf.c:33)
+==21960==    by 0x401DE0: send_client_request (http_support.c:279)
+==21960==    by 0x4017D7: handle_connection (proxy.c:255)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960== 
+==21960== Conditional jump or move depends on uninitialised value(s)
+==21960==    at 0x4E82E64: vfprintf (vfprintf.c:1642)
+==21960==    by 0x4E88F98: printf (printf.c:33)
+==21960==    by 0x401E61: send_client_request (http_support.c:289)
+==21960==    by 0x4017D7: handle_connection (proxy.c:255)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960== 
+==21960== Conditional jump or move depends on uninitialised value(s)
+==21960==    at 0x4E82E64: vfprintf (vfprintf.c:1642)
+==21960==    by 0x4E88F98: printf (printf.c:33)
+==21960==    by 0x401E7E: send_client_request (http_support.c:290)
+==21960==    by 0x4017D7: handle_connection (proxy.c:255)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960== 
+==21960== Conditional jump or move depends on uninitialised value(s)
+==21960==    at 0x4E82E64: vfprintf (vfprintf.c:1642)
+==21960==    by 0x4E88F98: printf (printf.c:33)
+==21960==    by 0x401EF9: send_client_request (http_support.c:301)
+==21960==    by 0x4017D7: handle_connection (proxy.c:255)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960== 
+==21960== Conditional jump or move depends on uninitialised value(s)
+==21960==    at 0x4C2BC38: strlen (in /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
+==21960==    by 0x402135: generate_request (http_support.c:377)
+==21960==    by 0x401F12: send_client_request (http_support.c:304)
+==21960==    by 0x4017D7: handle_connection (proxy.c:255)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960== 
+==21960== Conditional jump or move depends on uninitialised value(s)
+==21960==    at 0x40217D: generate_request (http_support.c:382)
+==21960==    by 0x401F12: send_client_request (http_support.c:304)
+==21960==    by 0x4017D7: handle_connection (proxy.c:255)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960== 
+==21960== Conditional jump or move depends on uninitialised value(s)
+==21960==    at 0x4C2B8F8: strcat (in /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
+==21960==    by 0x40220D: generate_request (http_support.c:385)
+==21960==    by 0x401F12: send_client_request (http_support.c:304)
+==21960==    by 0x4017D7: handle_connection (proxy.c:255)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960== 
+==21960== Invalid free() / delete / delete[] / realloc()
+==21960==    at 0x4C29D6A: free (in /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
+==21960==    by 0x401881: free_req (http_support.c:48)
+==21960==    by 0x4017E3: handle_connection (proxy.c:257)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960==  Address 0x51f6065 is 37 bytes inside a block of size 2,048 alloc'd
+==21960==    at 0x4C28C50: malloc (in /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
+==21960==    by 0x40178A: handle_connection (proxy.c:247)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960== 
+==21960== Invalid free() / delete / delete[] / realloc()
+==21960==    at 0x4C29D6A: free (in /usr/lib64/valgrind/vgpreload_memcheck-amd64-linux.so)
+==21960==    by 0x40189E: free_req (http_support.c:50)
+==21960==    by 0x4017E3: handle_connection (proxy.c:257)
+==21960==    by 0x4016A0: main (proxy.c:214)
+==21960==  Address 0x402500 is not stack'd, malloc'd or (recently) free'd
+==21960== 
+==21960== 
+==21960== HEAP SUMMARY:
+==21960==     in use at exit: 2,239 bytes in 2 blocks
+==21960==   total heap usage: 77 allocs, 77 frees, 11,269 bytes allocated
+==21960== 
+==21960== LEAK SUMMARY:
+==21960==    definitely lost: 2,239 bytes in 2 blocks
+==21960==    indirectly lost: 0 bytes in 0 blocks
+==21960==      possibly lost: 0 bytes in 0 blocks
+==21960==    still reachable: 0 bytes in 0 blocks
+==21960==         suppressed: 0 bytes in 0 blocks
+==21960== Rerun with --leak-check=full to see details of leaked memory
+==21960== 
+==21960== For counts of detected and suppressed errors, rerun with: -v
+==21960== Use --track-origins=yes to see where uninitialised values come from
+==21960== ERROR SUMMARY: 16 errors from 16 contexts (suppressed: 0 from 0)
+==21957== 
+==21957== HEAP SUMMARY:
+==21957==     in use at exit: 0 bytes in 0 blocks
+==21957==   total heap usage: 0 allocs, 0 frees, 0 bytes allocated
+==21957== 
+==21957== All heap blocks were freed -- no leaks are possible
+==21957== 
+==21957== For counts of detected and suppressed errors, rerun with: -v
+==21957== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
