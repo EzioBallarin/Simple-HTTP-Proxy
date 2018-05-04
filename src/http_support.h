@@ -56,7 +56,7 @@ void free_req(http_req *req);
 void print_req(http_req *req);
 void parse_client_request(char* req, http_req* req_fields);
 void parse_client_request_headers(char* headers, http_req* req_fields);
-void send_client_request(int client_socket, http_req* req_fields);
+void send_client_request(int client_socket, http_req* req_fields, int verbose);
 void exit_msg(int cond, const char* msg);
 char* generate_request(http_req* req_fields);
 

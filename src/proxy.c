@@ -43,7 +43,7 @@ void usage(const char* arg)
 }
 
 // Taken from client-server-ex
-void handle_connection(int fd);
+void handle_connection(int fd, int verbose);
 
 //
 // Main
@@ -91,9 +91,7 @@ int main(int argc, char *argv[])
     int proxy_socket = socket(AF_INET, SOCK_STREAM, 0);
 
     if (proxy_socket == -1) {
-        if(verbose == 1) {
             fprintf(stderr, "socket() failed: %s\n", strerror(errno));
-        }
         return -1;
     }
 
@@ -101,9 +99,7 @@ int main(int argc, char *argv[])
     int proxy_opt = setsockopt(proxy_socket, SOL_SOCKET, SO_REUSEADDR,
                                &optval, sizeof optval);
     if (proxy_opt == -1) {
-        if(verbose == 1) {
         fprintf(stderr, "setsockopt() failed: %s\n", strerror(errno));
-        }
         return -1;
 
     }
@@ -125,15 +121,13 @@ int main(int argc, char *argv[])
         sizeof(proxy_addr)
     );
     if (proxy_bind == -1) {
-        if(verbose == 1) {
             fprintf(stderr, "bind() failed: %s\n", strerror(errno));
-        }
         return -1;
     }   
 
     // Set the socket to listen on the user's given port
     int proxy_listen = listen(proxy_socket, LISTEN_QUEUE);
-    if (proxy_listen == -1 && verbose == 1) {
+    if (proxy_listen == -1) {
         fprintf(stderr, "listen() failed: %s\n", strerror(errno));
     }
 
@@ -155,9 +149,7 @@ int main(int argc, char *argv[])
         rval = select(proxy_socket+1, &proxy_and_conns, NULL, NULL, &tv);
         
         if (rval == -1) {
-            if(verbose == 1) {
-                fprintf(stderr, "select() failed: %s\n", strerror(errno));
-            }
+            fprintf(stderr, "select() failed: %s\n", strerror(errno));
             return -1;
         }
         
@@ -183,9 +175,7 @@ int main(int argc, char *argv[])
             &client_addr_size
         );
         if (client_socket == -1) {
-            if(verbose == 1) {
-                fprintf(stderr, "accept() failed: %s\n", strerror(errno));
-            }
+            fprintf(stderr, "accept() failed: %s\n", strerror(errno));
             return -1;
         }
 
@@ -200,9 +190,7 @@ int main(int argc, char *argv[])
                 client_ip_address, 
                 INET_ADDRSTRLEN
             ) == NULL) {
-            if(verbose == 1) {
-                fprintf(stderr, "inet_ntop() failed: %s\n", strerror(errno));
-            }
+            fprintf(stderr, "inet_ntop() failed: %s\n", strerror(errno));
             return -1;
         }
 
@@ -223,7 +211,7 @@ int main(int argc, char *argv[])
                 printf("Handling connection %d: \n", getpid());
 
             }
-            handle_connection(client_socket);
+            handle_connection(client_socket, verbose);
             if(verbose == 1) {
                 printf("%d done.", getpid());
             }
@@ -234,9 +222,7 @@ int main(int argc, char *argv[])
         // Close the connection between the proxy socket and client socket
         int client_close = close(client_socket);
         if (client_close == -1) {
-            if(verbose == 1) {
-                fprintf(stderr, "close() failed: %s\n", strerror(errno));
-            }
+            fprintf(stderr, "close() failed: %s\n", strerror(errno));
             return -1;
         }
 
@@ -244,17 +230,17 @@ int main(int argc, char *argv[])
     // Close the proxy down.
     int proxy_close = close(proxy_socket); 
     if (proxy_close == -1) {
-        if(verbose == 1) {
-            fprintf(stderr, "close() failed: %s\n", strerror(errno));
-        }
+        fprintf(stderr, "close() failed: %s\n", strerror(errno));
         return -1;
     }
-    printf("Server exiting\n");
+    if(verbose == 1) {
+        printf("Server exiting\n");
+    }
     return 0;
 }
 
 // Taken from client-server-ex
-void handle_connection(int client_socket) {
+void handle_connection(int client_socket, int verbose) {
 
     /* Entering the real meat of the netcode */
     // Setup a receiving buffer to carry the message sent from the client
@@ -266,7 +252,7 @@ void handle_connection(int client_socket) {
     // Read a request of length MESSAGE_BUFFER_LEN from client
     read(client_socket, client_request, MESSAGE_BUFFER_LEN);
     parse_client_request(client_request, &client_request_fields);
-    send_client_request(client_socket, &client_request_fields);
+    send_client_request(client_socket, &client_request_fields, verbose);
 
     free_req(&client_request_fields);
      
