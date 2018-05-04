@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in proxy_addr;
     proxy_addr.sin_family = AF_INET;
     proxy_addr.sin_port = htons(proxy_port);
-    proxy_addr.sin_addr.s_addr = INADDR_ANY;
+    proxy_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 
     // Bind the socket to the user's given port on all IP addresses 
@@ -237,6 +237,8 @@ void handle_connection(int client_socket) {
     // Setup a receiving buffer to carry the message sent from the client
     char client_request[MESSAGE_BUFFER_LEN];
     http_req client_request_fields;
+
+    init_req(&client_request_fields);
     
     // Read a request of length MESSAGE_BUFFER_LEN from client
     read(client_socket, &client_request, MESSAGE_BUFFER_LEN);
