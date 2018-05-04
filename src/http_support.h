@@ -45,16 +45,8 @@ typedef struct {
     char* uri;
     char* port;
     char* host;
-    char* user_agent;
     char* headers; 
-    struct http_header* other_headers; // Linked list of other headers in request
 } http_req;
-
-typedef struct {
-    char* header;
-    char* value;
-    struct http_header* next;
-} http_header;
 
 //
 // Function prototypes

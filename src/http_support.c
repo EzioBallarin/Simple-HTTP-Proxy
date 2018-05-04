@@ -24,6 +24,7 @@
 
 #define HTTP_TIME_FORMAT "%a, %d %b %Y %H:%M:%S GMT"
 #define DIRS_TIME_FORMAT "%d-%b-%Y %H:%M:%S"
+#define CRLF "\r\n"
 
 //
 // initializes a request to sensible defaults
@@ -31,9 +32,8 @@
 void init_req(http_req *req) {
     req->uri = NULL;
     req->port = "80";
-    req->other_headers = NULL;
+    req->headers= NULL;
     req->host = NULL;
-    req->user_agent = NULL;
 }
 
 //
@@ -44,10 +44,10 @@ void free_req(http_req *req) {
         free(req->uri);
     if (req->host)
         free(req->host);
-    if (req->user_agent)
-        free(req->user_agent);
-    if (req->other_headers)
-        free(req->other_headers);
+    if (req->headers)
+        free(req->headers);
+    if (req->port)
+        free(req->port);
     init_req(req);
 }
 
@@ -61,7 +61,10 @@ void free_req(http_req *req) {
  * 
  */
 void print_req(http_req* req) {
-
+    printf("host: %s\n", req->host);
+    printf("port: %s\n", req->port);
+    printf("uri: %s\n", req->uri);
+    printf("headers: %s\n", req->headers);
 }
 
 //
@@ -156,12 +159,10 @@ void parse_client_request(char* req, http_req* req_fields) {
 
         it++;
     }
-    printf("finished parsing request line\n");
 
     long int host_length = host_end - uri_start;
     req_fields->host = malloc(host_length + 1);
     strncpy(req_fields->host, uri_start, host_length);
-    printf("%s\n", req_fields->host);
     /** HOST parsed **/
     
     // Since we have iterated to the end of the URI, and we saved
@@ -171,7 +172,6 @@ void parse_client_request(char* req, http_req* req_fields) {
     req_fields->uri = malloc(uri_length + 1);
     strncpy(req_fields->uri, uri_start, uri_length);
     req_fields->uri[uri_length] = '\0';
-    printf("%s\n", req_fields->uri);
     /** URI parsed **/
 
     if (port_start != NULL) {
@@ -190,33 +190,9 @@ void parse_client_request(char* req, http_req* req_fields) {
     // Move iterator to (potential) first request header
     it++;
 
-    parse_client_request_headers(it, req_fields); 
     req_fields->headers = it;
 
-    printf("done with request\n\n");
-
     return;
-}
-
-/**
- * Name: parse_client_request_headers
- * 
- * Purpose: Parse the remainder of an HTTP request's headers
- * Parameters: char* headers - the header string
- *             http_req* req_fields - pointer to where all parsed
- *                                    headers should be stored
- * Return: None
- * 
- */
-void parse_client_request_headers(char* headers, http_req* req_fields) {
-    /*
-    char* header_start = headers;
-    char* cur = headers;
-    size_t hsize = sizeof (http_header);
-    */
-    /** TODO: parse message headers **/
-    //printf("%p %p %d\n", header_start, cur, hsize);
-
 }
 
 /**
@@ -297,7 +273,8 @@ void send_client_request(int client_socket, http_req* req_fields) {
             NULL, 0, NI_NUMERICHOST
         );
 
-        printf("Checking %s\t%s...\n", addr_string,host);
+
+        printf("Creating socket for %s...\n", req_fields->host); 
         int req_socket = socket(
             record->ai_family, record->ai_socktype, record->ai_protocol
         );
@@ -305,9 +282,10 @@ void send_client_request(int client_socket, http_req* req_fields) {
             fprintf(stderr, "req_socket: %s\n", strerror(errno));
             continue;
         } 
-
         printf("Socket created for request to %s...\n", req_fields->host);
+        
 
+        printf("Connecting to %s...\n", req_fields->host);
         int client_req_conn = connect(
             req_socket, client_req_addr, record->ai_addrlen
         );
@@ -315,23 +293,26 @@ void send_client_request(int client_socket, http_req* req_fields) {
             fprintf(stderr, "client_req_conn: %s\n", strerror(errno));
             continue;
         }
-
         printf("Successfully connected to %s...\n", req_fields->host);
+
 
         printf("Generating user's request...\n");
         char* client_request = generate_request(req_fields);
+        printf("Request generated...\n");
+
+
         printf("Sending user's request...\n");
         int client_req_write = write(
-            req_socket, client_request, sizeof(client_request)
+            req_socket, client_request, strlen(client_request) + 1
         );
         if (client_req_write == -1) {
             fprintf(stderr, "client_req_write: %s\n", strerror(errno));
             continue;
         }
-
         printf("Request sent...\n");
 
-        char remote_response[1024];
+
+        char remote_response[1];
         int client_req_read = 0;
         int client_req_resp = 0;
         printf("Receiving response...\n");
@@ -350,12 +331,12 @@ void send_client_request(int client_socket, http_req* req_fields) {
             }
 
         }
-
         if (client_req_read == -1) {
             fprintf(stderr, "client_req_read: %s\n", strerror(errno));
             continue;
         }
         printf("Response transmitted to client...\n\n");
+
         break; 
 
     }
@@ -378,5 +359,19 @@ void send_client_request(int client_socket, http_req* req_fields) {
  * 
  */
 char* generate_request(http_req* req_fields) {
-   return NULL; 
+
+    int req_line_size = strlen("GET http://") + strlen(req_fields->uri) + 
+                        strlen(" HTTP/1.1\r\n");
+    int headers_size = strlen(req_fields->headers);
+    char* req_string = malloc(req_line_size + headers_size + 1);
+
+    req_string[req_line_size + headers_size] = '\0';
+    
+    strcat(req_string, "GET http://");
+    strcat(req_string, req_fields->uri);
+    strcat(req_string, " HTTP/1.1\r\n");
+    strcat(req_string, req_fields->headers);
+
+    return req_string;
+
 }
