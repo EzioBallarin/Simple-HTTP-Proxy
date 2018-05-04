@@ -50,7 +50,7 @@ void handle_connection(int fd, int verbose);
 //
 int main(int argc, char *argv[])
 {
-    int i, opt, verbose;
+    int i, opt, verbose = 0;
     char *port = NULL;
 
     // parse arguments
@@ -246,15 +246,19 @@ void handle_connection(int client_socket, int verbose) {
     // Setup a receiving buffer to carry the message sent from the client
     char* client_request = malloc(MESSAGE_BUFFER_LEN);
     http_req client_request_fields;
+    memset(client_request, 0, MESSAGE_BUFFER_LEN);
+    memset(&client_request_fields, 0, sizeof client_request_fields);
 
     init_req(&client_request_fields);
     
     // Read a request of length MESSAGE_BUFFER_LEN from client
     read(client_socket, client_request, MESSAGE_BUFFER_LEN);
+    printf(client_request);
     parse_client_request(client_request, &client_request_fields);
     send_client_request(client_socket, &client_request_fields, verbose);
 
     free_req(&client_request_fields);
+    free(client_request);
      
     return;
 
