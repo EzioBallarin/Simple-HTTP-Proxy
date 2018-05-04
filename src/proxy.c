@@ -235,14 +235,14 @@ void handle_connection(int client_socket) {
 
     /* Entering the real meat of the netcode */
     // Setup a receiving buffer to carry the message sent from the client
-    char client_request[MESSAGE_BUFFER_LEN];
+    char* client_request = malloc(MESSAGE_BUFFER_LEN);
     http_req client_request_fields;
 
     init_req(&client_request_fields);
     
     // Read a request of length MESSAGE_BUFFER_LEN from client
-    read(client_socket, &client_request, MESSAGE_BUFFER_LEN);
-    parse_client_request(&client_request, &client_request_fields);
+    read(client_socket, client_request, MESSAGE_BUFFER_LEN);
+    parse_client_request(client_request, &client_request_fields);
     send_client_request(client_socket, &client_request_fields);
 
     free_req(&client_request_fields);
