@@ -204,7 +204,7 @@ void parse_client_request(char* req, http_req* req_fields) {
  * Return: None
  * 
  */
-void send_client_request(int client_socket, http_req* req_fields) {
+void send_client_request(int client_socket, http_req* req_fields, int verbose) {
 
     // Set up an addrinfo struct and an addrinfo linked list
     // The hints addrinfo provides the structure which getaddrinfo()
@@ -218,7 +218,9 @@ void send_client_request(int client_socket, http_req* req_fields) {
     hints.ai_family = AF_INET;     // IPV4 records only
     hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
 
-    printf("\nLooking up %s...\n", req_fields->host);
+    if(verbose == 1) {
+        printf("\nLooking up %s...\n", req_fields->host);
+    }
 
     // Param 1 = the host name to look up
     // Param 2 = a service to look up (left NULL since
@@ -264,7 +266,7 @@ void send_client_request(int client_socket, http_req* req_fields) {
 
         if (inet_ntop(
                 record->ai_family, client_req_addr, addr_string, addr_size
-            ) == NULL ) {
+            ) == NULL) {
             fprintf(stderr, "inet_ntop: %s\n", strerror(errno));
             continue;
         }
@@ -273,19 +275,20 @@ void send_client_request(int client_socket, http_req* req_fields) {
             NULL, 0, NI_NUMERICHOST
         );
 
-
-        printf("Creating socket for %s...\n", req_fields->host); 
+        if(verbose == 1) {
+            printf("Creating socket for %s...\n", req_fields->host); 
+        }
         int req_socket = socket(
             record->ai_family, record->ai_socktype, record->ai_protocol
         );
         if (req_socket == -1) {
             fprintf(stderr, "req_socket: %s\n", strerror(errno));
             continue;
+        }
+        if(verbose == 1) {
+            printf("Socket created for request to %s...\n", req_fields->host);
+            printf("Connecting to %s...\n", req_fields->host);
         } 
-        printf("Socket created for request to %s...\n", req_fields->host);
-        
-
-        printf("Connecting to %s...\n", req_fields->host);
         int client_req_conn = connect(
             req_socket, client_req_addr, record->ai_addrlen
         );
@@ -293,15 +296,18 @@ void send_client_request(int client_socket, http_req* req_fields) {
             fprintf(stderr, "client_req_conn: %s\n", strerror(errno));
             continue;
         }
-        printf("Successfully connected to %s...\n", req_fields->host);
 
-
-        printf("Generating user's request...\n");
+        if(verbose == 1) {
+            printf("Successfully connected to %s...\n", req_fields->host);
+            printf("Generating user's request...\n");
+        }
         char* client_request = generate_request(req_fields);
-        printf("Request generated...\n");
+        if(verbose == 1) {
+            printf("Request generated...\n");
+            printf("Sending user's request...\n");
+        }
 
 
-        printf("Sending user's request...\n");
         int client_req_write = write(
             req_socket, client_request, strlen(client_request) + 1
         );
@@ -309,13 +315,17 @@ void send_client_request(int client_socket, http_req* req_fields) {
             fprintf(stderr, "client_req_write: %s\n", strerror(errno));
             continue;
         }
-        printf("Request sent...\n");
+        if(verbose == 1) {
+            printf("Request sent...\n");
+        }
 
 
         char remote_response[1];
         int client_req_read = 0;
         int client_req_resp = 0;
-        printf("Receiving response...\n");
+        if(verbose == 1) {
+            printf("Receiving response...\n");
+        }
         while ((client_req_read = read(
             req_socket, &remote_response, sizeof(remote_response))) > 0) {
 
@@ -335,7 +345,9 @@ void send_client_request(int client_socket, http_req* req_fields) {
             fprintf(stderr, "client_req_read: %s\n", strerror(errno));
             continue;
         }
-        printf("Response transmitted to client...\n\n");
+        if(verbose == 1) {
+            printf("Response transmitted to client...\n\n");
+        }
 
         break; 
 
