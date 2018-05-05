@@ -1,3 +1,0 @@
-GET http://blue.cs.sonoma.edu/~nwalker/bigworld.png HTTP/1.0
-Host: blue.cs.sonoma.edu
-
