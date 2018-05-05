@@ -3,7 +3,7 @@
 #
 
 CC=gcc
-CFLAGS=-g -Wall
+CFLAGS=-g
 LDFLAGS=
 BINS=proxy
 
@@ -22,7 +22,10 @@ $(BINS):
 	$(CC) $< -ggdb -c $(CFLAGS) -o $@
 
 clean:
-	rm -rf *.o $(BINS) test/proxy_return/*
+	rm -rf *.o $(BINS)
 
 clean_tests:
 	rm -rf test/proxy_return/*
+
+clean_check_values:
+	rm -rf test/check_values/*

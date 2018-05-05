@@ -45,9 +45,9 @@ void free_req(http_req *req) {
     if (req->host)
         free(req->host);
     if (req->headers)
-        free(req->headers);
+        req->headers = NULL;
     if (req->port)
-        free(req->port);
+        req->headers = NULL;
     init_req(req);
 }
 
@@ -162,6 +162,7 @@ void parse_client_request(char* req, http_req* req_fields) {
 
     long int host_length = host_end - uri_start;
     req_fields->host = malloc(host_length + 1);
+    memset(req_fields->host, 0, host_length + 1);
     strncpy(req_fields->host, uri_start, host_length);
     /** HOST parsed **/
     
@@ -170,6 +171,7 @@ void parse_client_request(char* req, http_req* req_fields) {
     // so we can copy that portion of the req to the req_fields struct
     long int uri_length = it - uri_start;
     req_fields->uri = malloc(uri_length + 1);
+    memset(req_fields->uri, 0, uri_length + 1);
     strncpy(req_fields->uri, uri_start, uri_length);
     req_fields->uri[uri_length] = '\0';
     /** URI parsed **/
@@ -177,6 +179,7 @@ void parse_client_request(char* req, http_req* req_fields) {
     if (port_start != NULL) {
         long int port_length = port_end - port_start;
         char* port = malloc(port_length + 1);
+        memset(port, 0, port_length + 1);
         strncpy(port, port_start, port_length);
         port[port_length] = '\0';
         req_fields->port = port; 
@@ -218,7 +221,7 @@ void send_client_request(int client_socket, http_req* req_fields, int verbose) {
     hints.ai_family = AF_INET;     // IPV4 records only
     hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
 
-    if(verbose == 1) {
+    if (verbose == 1) {
         printf("\nLooking up %s...\n", req_fields->host);
     }
 
@@ -285,7 +288,7 @@ void send_client_request(int client_socket, http_req* req_fields, int verbose) {
             fprintf(stderr, "req_socket: %s\n", strerror(errno));
             continue;
         }
-        if(verbose == 1) {
+        if (verbose == 1) {
             printf("Socket created for request to %s...\n", req_fields->host);
             printf("Connecting to %s...\n", req_fields->host);
         } 
@@ -328,7 +331,6 @@ void send_client_request(int client_socket, http_req* req_fields, int verbose) {
         }
         while ((client_req_read = read(
             req_socket, &remote_response, sizeof(remote_response))) > 0) {
-
             client_req_resp = write(
                 client_socket, &remote_response, sizeof(remote_response)
             );
@@ -348,6 +350,8 @@ void send_client_request(int client_socket, http_req* req_fields, int verbose) {
         if(verbose == 1) {
             printf("Response transmitted to client...\n\n");
         }
+
+        free(client_request);
 
         break; 
 
@@ -373,16 +377,19 @@ void send_client_request(int client_socket, http_req* req_fields, int verbose) {
 char* generate_request(http_req* req_fields) {
 
     int req_line_size = strlen("GET http://") + strlen(req_fields->uri) + 
-                        strlen(" HTTP/1.1\r\n");
+                        strlen(" HTTP/1.0\r\n");
     int headers_size = strlen(req_fields->headers);
     char* req_string = malloc(req_line_size + headers_size + 1);
+    memset(req_string, 0, req_line_size + headers_size + 1);
 
     req_string[req_line_size + headers_size] = '\0';
     
     strcat(req_string, "GET http://");
     strcat(req_string, req_fields->uri);
-    strcat(req_string, " HTTP/1.1\r\n");
+    strcat(req_string, " HTTP/1.0\r\n");
     strcat(req_string, req_fields->headers);
+
+    printf("HERE'S YOUR REQUEST:\n\n%s", req_string);
 
     return req_string;
 
