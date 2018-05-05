@@ -33,3 +33,14 @@ then
 else
     echo "HTML Test Failed"
 fi
+
+echo "Testing GET request of zeroResponse file"
+http_proxy="blue.cs.sonoma.edu:$1" wget blue.cs.sonoma.edu/~gkaiser/zeroResponse -q --prefer-family=IPv4 -O proxy_return/zeroResponse.ret
+diff -q proxy_return/zeroResponse.ret check_values/zeroResponse.check > /dev/null 2>&1
+if [ $? -eq 0 ]
+then
+    echo "zeroResponse Test Passed"
+else
+    echo "zeroResponse Test Failed"
+fi
+
