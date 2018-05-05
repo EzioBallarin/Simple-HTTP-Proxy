@@ -44,3 +44,12 @@ else
     echo "zeroResponse Test Failed"
 fi
 
+echo "Testing a Large Request"
+http_proxy="blue.cs.sonoma.edu:$1" wget blue.cs.sonoma.edu/~nwalker/bigworld.png -q --prefer-family=IPv4 -O proxy_return/bigworld.ret
+diff -q proxy_return/bigworld.ret check_values/bigworld.check > /dev/null 2>&1
+if [ $? -eq 0 ]
+then
+    echo "Large Request Test Passed"
+else
+    echo "Large Request Test Failed"
+fi

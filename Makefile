@@ -3,7 +3,7 @@
 #
 
 CC=gcc
-CFLAGS=-g -Wall
+CFLAGS=-g
 LDFLAGS=
 BINS=proxy
 
