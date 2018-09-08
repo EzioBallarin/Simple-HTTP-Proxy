@@ -1,6 +1,6 @@
-# CS365-Lab3
+# Simple HTTP Proxy
 
-Ezio Ballarin, Jack Newman, Nathan Walker, Garret Kaiser
+Ezio Ballarin, Jack Newman
 
 Design:
 We took the classic approach laid out by Beej as our guiding light when 
